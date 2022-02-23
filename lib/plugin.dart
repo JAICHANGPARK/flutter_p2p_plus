@@ -19,7 +19,6 @@ class FlutterP2pPlus {
   static WiFiDirectBroadcastReceiver wifiEvents = WiFiDirectBroadcastReceiver();
   static final SocketMaster _socketMaster = SocketMaster();
 
-
   static Future<bool?> isLocationPermissionGranted() async {
     return await _channel.invokeMethod("isLocationPermissionGranted", {});
   }
@@ -27,7 +26,6 @@ class FlutterP2pPlus {
   static Future<bool?> requestLocationPermission() async {
     return await _channel.invokeMethod("requestLocationPermission", {});
   }
-
 
   static Future<bool?> register() async {
     return await _channel.invokeMethod("register", {});
@@ -37,7 +35,6 @@ class FlutterP2pPlus {
     return await _channel.invokeMethod("unregister", {});
   }
 
-
   static Future<bool?> discoverDevices() async {
     return await _channel.invokeMethod("discover", {});
   }
@@ -46,10 +43,8 @@ class FlutterP2pPlus {
     return await _channel.invokeMethod("stopDiscover", {});
   }
 
-
   static Future<bool?> connect(WifiP2pDevice device) async {
-    return await _channel
-        .invokeMethod("connect", {"payload": device.writeToBuffer()});
+    return await _channel.invokeMethod("connect", {"payload": device.writeToBuffer()});
   }
 
   static Future<bool?> cancelConnect(WifiP2pDevice device) async {
@@ -106,6 +101,4 @@ class FlutterP2pPlus {
       "payload": req.writeToBuffer(),
     });
   }
-
-
 }
