@@ -34,6 +34,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import java.lang.Exception
 
 
 class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
@@ -183,12 +184,19 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
             }
             "connect" -> {
                 val device = Protos.WifiP2pDevice.parseFrom(call.argument<ByteArray>("payload"))
+                Log.e(TAG, "[Device] $device | ${device.deviceName} | ${device.deviceAddress}")
+//                val config = WifiP2pConfig().apply {
+//                    deviceAddress = device.deviceAddress
+//                }
+                val config = WifiP2pConfig()
+                config.deviceAddress = device.deviceAddress
 
-                val config = WifiP2pConfig().apply {
-                    deviceAddress = device.deviceAddress
+                try {
+                    manager.connect(channel, config, ResultActionListener(result))
+                }catch(e: Exception ) {
+                    Log.e(TAG, "[Error] ${e.toString()}")
                 }
 
-                manager.connect(channel, config, ResultActionListener(result))
             }
             "cancelConnect" -> {
                 manager.cancelConnect(channel, ResultActionListener(result))
