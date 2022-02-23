@@ -1,10 +1,10 @@
 name: flutter_p2p_plus
 description: A new Flutter project.
-version: 1.0.0
+version: 1.0.1
 homepage: https://github.com/JAICHANGPARK/flutter_p2p_plus
 
 environment:
-  sdk: ">=2.17.0-125.0.dev <3.0.0"
+  sdk: ">=2.14.0 <3.0.0"
   flutter: ">=2.5.0"
 
 dependencies:
@@ -12,11 +12,11 @@ dependencies:
     sdk: flutter
   flutter_web_plugins:
     sdk: flutter
-  protobuf: ^2.0.0
+  protobuf: ^2.0.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^1.0.0
+  flutter_lints: ^1.0.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
