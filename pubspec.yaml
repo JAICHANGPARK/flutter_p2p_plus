@@ -1,7 +1,8 @@
 name: flutter_p2p_plus
-description: A new Flutter project.
+description: A WiFi Direct Plugin for Flutter. This Plugin uses the native WiFi P2P API of Android.
 version: 1.0.1
 homepage: https://github.com/JAICHANGPARK/flutter_p2p_plus
+repository: https://github.com/JAICHANGPARK/flutter_p2p_plus
 
 environment:
   sdk: ">=2.14.0 <3.0.0"
