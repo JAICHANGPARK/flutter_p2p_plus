@@ -10,15 +10,19 @@
 
 package com.dreamwalker.flutter_p2p_plus.wifi_direct
 
+import android.content.ContentValues.TAG
 import android.net.wifi.p2p.WifiP2pManager
+import android.util.Log
 import io.flutter.plugin.common.MethodChannel
 
 class ResultActionListener(private val result: MethodChannel.Result) : WifiP2pManager.ActionListener {
     override fun onSuccess() {
+        Log.e(TAG, "[ResultActionListener] onSuccess()")
         result.success(true)
     }
 
     override fun onFailure(reasonCode: Int) {
+        Log.e(TAG, "[ResultActionListener] onFailure() | code = $reasonCode")
         result.error(reasonCode.toString(), null, null)
     }
 }

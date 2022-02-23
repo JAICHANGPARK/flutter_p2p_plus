@@ -126,8 +126,6 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
         )
         mChannel.setMethodCallHandler(this)
 
-        eventPool = EventChannelPool(flutterPluginBinding.binaryMessenger)
-
         manager =
             flutterPluginBinding.applicationContext.getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
         channel = manager.initialize(
@@ -135,7 +133,9 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
             Looper.getMainLooper(),
             null
         )
+        eventPool = EventChannelPool(flutterPluginBinding.binaryMessenger)
         setupEventPool()
+
     }
 
 
@@ -193,7 +193,7 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
 
                 try {
                     manager.connect(channel, config, ResultActionListener(result))
-                }catch(e: Exception ) {
+                } catch (e: Exception) {
                     Log.e(TAG, "[Error] ${e.toString()}")
                 }
 
@@ -250,6 +250,7 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     result.error("Invalid address or port given", null, null)
                     return
                 }
+                Log.e(TAG, "[Call] connectToHost $address | $port | $timeout")
 
                 socketPool.connectToHost(address, port, timeout)
                 result.success(true)
@@ -298,9 +299,6 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     )
                 }
             }
-
         }
-
     }
-
 }

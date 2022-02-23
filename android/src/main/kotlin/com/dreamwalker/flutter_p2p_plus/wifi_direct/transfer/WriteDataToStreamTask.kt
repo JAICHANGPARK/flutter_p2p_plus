@@ -11,15 +11,25 @@
 package com.dreamwalker.flutter_p2p_plus.wifi_direct.transfer
 
 import android.os.AsyncTask
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.launch
 import java.io.OutputStream
 
-class WriteDataToStreamTask(private val stream: OutputStream,
-                            private val bytes: ByteArray
-) : AsyncTask<Void, Void, Boolean>() {
+class WriteDataToStreamTask(
+    private val stream: OutputStream,
+    private val bytes: ByteArray
+) {
 
-    override fun doInBackground(vararg params: Void?): Boolean {
-        stream.write(bytes)
-        stream.flush()
+    val mCoroutineScope: CoroutineScope = CoroutineScope(IO)
+
+
+    fun doInBackground(vararg params: Void?): Boolean {
+        mCoroutineScope.launch {
+            stream.write(bytes)
+            stream.flush()
+
+        }
         return true
     }
 

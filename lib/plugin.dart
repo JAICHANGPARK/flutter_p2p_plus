@@ -74,13 +74,15 @@ class FlutterP2pPlus {
     int port, {
     int timeout = 500,
   }) async {
-    if (await (_channel.invokeMethod("connectToHost", {
+    bool? result = await _channel.invokeMethod("connectToHost", {
       "address": address,
       "port": port,
       "timeout": timeout,
-    }) as FutureOr<bool>)) {
+    });
+    if (result ?? false) {
       return _socketMaster.registerSocket(port, false);
     }
+
     return null;
   }
 

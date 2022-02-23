@@ -14,7 +14,7 @@ part of 'flutter_p2p_plus.dart';
 class WiFiDirectBroadcastReceiver {
   static const _channelBase = FlutterP2pPlus.channelBase;
 
-  static final EventChannel _stateChangeChannel = EventChannel("$_channelBase/bc/state-change");
+  static EventChannel _stateChangeChannel = EventChannel("$_channelBase/bc/state-change");
 
   static EventChannel _peersChangeChannel = EventChannel("$_channelBase/bc/peers-change");
 
@@ -38,23 +38,25 @@ class WiFiDirectBroadcastReceiver {
   }
 
   Stream<WifiP2pDeviceList>? get peersChange {
-    _peersChangeStream ??=
-        _peersChangeChannel.receiveBroadcastStream().map<WifiP2pDeviceList>((src) => WifiP2pDeviceList.fromBuffer(src));
+    _peersChangeStream ??= _peersChangeChannel.receiveBroadcastStream().map<WifiP2pDeviceList>(
+          (src) => WifiP2pDeviceList.fromBuffer(src),
+        );
 
     return _peersChangeStream;
   }
 
   Stream<ConnectionChange>? get connectionChange {
-    _connectionChangeStream ??= _connectionChangeChannel
-        .receiveBroadcastStream()
-        .map<ConnectionChange>((src) => ConnectionChange.fromBuffer(src));
+    _connectionChangeStream ??= _connectionChangeChannel.receiveBroadcastStream().map<ConnectionChange>(
+          (src) => ConnectionChange.fromBuffer(src),
+        );
 
     return _connectionChangeStream;
   }
 
   Stream<WifiP2pDevice>? get thisDeviceChange {
-    _thisDeviceChangeStream ??=
-        _thisDeviceChangeChannel.receiveBroadcastStream().map<WifiP2pDevice>((src) => WifiP2pDevice.fromBuffer(src));
+    _thisDeviceChangeStream ??= _thisDeviceChangeChannel.receiveBroadcastStream().map<WifiP2pDevice>(
+          (src) => WifiP2pDevice.fromBuffer(src),
+        );
 
     return _thisDeviceChangeStream;
   }

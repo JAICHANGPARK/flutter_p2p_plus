@@ -17,7 +17,6 @@ import 'package:flutter_p2p_plus/flutter_p2p_plus.dart';
 import 'package:flutter_p2p_plus/protos/protos.pb.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-
 void main() => runApp(MyApp());
 
 class MyApp extends StatefulWidget {
@@ -31,7 +30,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   var _isConnected = false;
   var _isHost = false;
   var _isOpen = false;
-
 
   P2pSocket? _socket;
   List<WifiP2pDevice> devices = [];
@@ -48,7 +46,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     FlutterP2pPlus.removeGroup();
-    for (var element in _subscriptions) {element.cancel();}
+    for (var element in _subscriptions) {
+      element.cancel();
+    }
     super.dispose();
   }
 
@@ -91,9 +91,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     _subscriptions.add(FlutterP2pPlus.wifiEvents.peersChange!.listen((change) {
       debugPrint("peersChange: ${change.devices.length}");
-      change.devices.forEach((device) {
+      for (var device in change.devices) {
         debugPrint("device: ${device.deviceName} / ${device.deviceAddress}");
-      });
+      }
 
       setState(() {
         devices = change.devices;
@@ -111,7 +111,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   void _openPortAndAccept(int port) async {
-    if(!_isOpen){
+    if (!_isOpen) {
       var socket = await FlutterP2pPlus.openHostPort(port);
       setState(() {
         _socket = socket;
@@ -129,7 +129,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       });
 
       debugPrint("_openPort done");
-      _isOpen = (await FlutterP2pPlus.acceptPort(port))!;
+      _isOpen = await FlutterP2pPlus.acceptPort(port) ?? false;
       debugPrint("_accept done: $_isOpen");
     }
   }
@@ -158,17 +158,17 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     //   await FlutterP2pPlus.requestLocationPermission();
     //   return false;
     // }
-    if(await Permission.location.status.isDenied){
+    if (await Permission.location.status.isDenied) {
       return false;
     }
     return true;
   }
 
-  Future<bool?> _disconnect() async{
+  Future<bool?> _disconnect() async {
     bool? result = await FlutterP2pPlus.removeGroup();
     _unregister();
     _socket = null;
-    if((result ?? false) ) _isOpen = false;
+    if ((result ?? false)) _isOpen = false;
     return result;
   }
 
@@ -183,6 +183,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            ListTile(
+              title: const Text("Registration"),
+              subtitle: Text("P2P Registration"),
+              onTap: () async {
+                await FlutterP2pPlus.register();
+              },
+            ),
             ListTile(
               title: const Text("Connection State"),
               subtitle: Text(_isConnected ? "Connected: ${_isHost ? "Host" : "Client"}" : "Disconnected"),
@@ -210,7 +217,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                       },
                     ),
                   ),
-                  VerticalDivider(color: Colors.grey,),
+                  VerticalDivider(
+                    color: Colors.grey,
+                  ),
                   Expanded(
                     child: ListTile(
                       title: const Text("Stop Discover Devices"),
@@ -232,7 +241,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             ListTile(
               title: const Text("Connect to port 8000"),
               subtitle: const Text("This is able to only Client"),
-              onTap: _isConnected &&!_isHost ? () => _connectToPort(8000) : null,
+              onTap: _isConnected && !_isHost ? () => _connectToPort(8000) : null,
             ),
             const Divider(),
             ListTile(
@@ -258,12 +267,17 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                   return ListTile(
                     title: Text(d.deviceName),
                     subtitle: Text(d.deviceAddress),
-                    onTap: () async{
+                    onTap: () async {
                       debugPrint("${_isConnected ? "Disconnect" : "Connect"} to device: $_deviceAddress");
-                      if(_isConnected){
-                        FlutterP2pPlus.cancelConnect(d);
-                      }else{
-                        FlutterP2pPlus.connect(d);
+                      if (_isConnected) {
+                        await FlutterP2pPlus.cancelConnect(d);
+                      } else {
+                        var result = (await FlutterP2pPlus.connect(d) ?? false);
+                        print("[connect] reault: $result");
+                        if (result) {
+                          _isConnected = true;
+                        }
+                        setState(() {});
                       }
                     },
                   );
