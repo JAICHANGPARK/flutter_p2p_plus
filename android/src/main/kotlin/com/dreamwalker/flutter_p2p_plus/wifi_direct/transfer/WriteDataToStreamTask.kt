@@ -25,7 +25,7 @@ class WriteDataToStreamTask(
     val mCoroutineScope: CoroutineScope = CoroutineScope(IO)
 
     override fun doInBackground(vararg params: Void?): Boolean {
-        Log.e(TAG, "[WriteDataToStreamTask] doInBackground() | $bytes | ${bytes.toString()}")
+        Log.e(TAG, "[WriteDataToStreamTask] doInBackground() | $bytes ")
         mCoroutineScope.launch {
             stream.write(bytes)
             stream.flush()

@@ -162,7 +162,8 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     eventPool?.getHandler(CH_PEERS_CHANGE)?.sink,
                     eventPool?.getHandler(CH_CON_CHANGE)?.sink,
                     eventPool?.getHandler(CH_DEVICE_CHANGE)?.sink,
-                    eventPool?.getHandler(CH_DISCOVERY_CHANGE)?.sink
+                    eventPool?.getHandler(CH_DISCOVERY_CHANGE)?.sink,
+                    pluginBinding?.applicationContext,
                 )
                 context?.registerReceiver(receiver, intentFilter)
                 result.success(true)
@@ -183,13 +184,15 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 manager.stopPeerDiscovery(channel, ResultActionListener(result))
             }
             "connect" -> {
+                Log.e(TAG, "[Call] onMethodCall connect()")
                 val device = Protos.WifiP2pDevice.parseFrom(call.argument<ByteArray>("payload"))
-                Log.e(TAG, "[Device] $device | ${device.deviceName} | ${device.deviceAddress}")
+                Log.e(TAG, "[Device] $device | ${device.deviceName} | ${device.deviceAddress} | ")
 //                val config = WifiP2pConfig().apply {
 //                    deviceAddress = device.deviceAddress
 //                }
                 val config = WifiP2pConfig()
                 config.deviceAddress = device.deviceAddress
+
 
                 try {
                     manager.connect(channel, config, ResultActionListener(result))
@@ -199,6 +202,7 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
 
             }
             "cancelConnect" -> {
+                Log.e(TAG, "[Call] onMethodCall cancelConnect()")
                 manager.cancelConnect(channel, ResultActionListener(result))
             }
             "removeGroup" -> {
@@ -212,6 +216,7 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 }
             }
             "openHostPort" -> {
+                Log.e(TAG, "[Call] onMethodCall openHostPort()")
                 val port = call.argument<Int>("port")
                 if (port == null) {
                     result.error("Invalid port given", null, null)
@@ -221,7 +226,9 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 socketPool.openSocket(port)
                 result.success(true)
             }
+
             "closeHostPort" -> {
+                Log.e(TAG, "[Call] onMethodCall closeHostPort()")
                 val port = call.argument<Int>("port")
                 if (port == null) {
                     result.error("Invalid port given", null, null)
@@ -242,6 +249,7 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 result.success(true)
             }
             "connectToHost" -> {
+                Log.e(TAG, "[Call] onMethodCall connectToHost()")
                 val address = call.argument<String>("address")
                 val port = call.argument<Int>("port")
                 val timeout = call.argument<Int>("timeout") ?: config.timeout
@@ -256,6 +264,7 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 result.success(true)
             }
             "disconnectFromHost" -> {
+                Log.e(TAG, "[Call] onMethodCall disconnectFromHost()")
                 val port = call.argument<Int>("port")
                 if (port == null) {
                     result.error("Invalid port given", null, null)

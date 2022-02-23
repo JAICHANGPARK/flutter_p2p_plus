@@ -39,14 +39,14 @@ flutter:
       android:
         package: com.dreamwalker.flutter_p2p_plus
         pluginClass: FlutterP2pPlusPlugin
-      ios:
-        pluginClass: FlutterP2pPlusPlugin
-      linux:
-        pluginClass: FlutterP2pPlusPlugin
-      macos:
-        pluginClass: FlutterP2pPlusPlugin
-      windows:
-        pluginClass: FlutterP2pPlusPluginCApi
+#      ios:
+#        pluginClass: FlutterP2pPlusPlugin
+#      linux:
+#        pluginClass: FlutterP2pPlusPlugin
+#      macos:
+#        pluginClass: FlutterP2pPlusPlugin
+#      windows:
+#        pluginClass: FlutterP2pPlusPluginCApi
       web:
         pluginClass: FlutterP2pPlusWeb
         fileName: flutter_p2p_plus_web.dart

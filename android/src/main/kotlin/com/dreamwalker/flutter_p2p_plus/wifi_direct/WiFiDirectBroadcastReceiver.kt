@@ -14,15 +14,19 @@ import android.content.BroadcastReceiver
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.NetworkInfo
 import android.net.wifi.p2p.WifiP2pDevice
 import android.net.wifi.p2p.WifiP2pInfo
 import android.net.wifi.p2p.WifiP2pManager
+import android.os.Build
 import android.util.Log
-import com.dreamwalker.flutter_p2p_plus.utility.ProtoHelper
+import androidx.core.content.ContextCompat.getSystemService
 import com.dreamwalker.flutter_p2p_plus.Protos
+import com.dreamwalker.flutter_p2p_plus.utility.ProtoHelper
 import io.flutter.plugin.common.EventChannel
-import java.lang.Exception
+
 
 class WiFiDirectBroadcastReceiver(
     private val manager: WifiP2pManager,
@@ -31,7 +35,8 @@ class WiFiDirectBroadcastReceiver(
     peersChangedSink: EventChannel.EventSink?,
     private val connectionChangedSink: EventChannel.EventSink?,
     private val thisDeviceChangedSink: EventChannel.EventSink?,
-    private val discoveryChangedSink: EventChannel.EventSink?
+    private val discoveryChangedSink: EventChannel.EventSink?,
+    private val appContext: Context?
 ) : BroadcastReceiver() {
 
     private val peerListListener = WiFiDirectPeerListListener(peersChangedSink)
@@ -55,10 +60,10 @@ class WiFiDirectBroadcastReceiver(
             intent.getParcelableExtra<WifiP2pInfo>(WifiP2pManager.EXTRA_WIFI_P2P_INFO) as WifiP2pInfo
         val networkInfo =
             intent.getParcelableExtra<NetworkInfo>(WifiP2pManager.EXTRA_NETWORK_INFO) as NetworkInfo
-        Log.e(TAG, "[onConnectionChanged] $p2pInfo ")
+
         manager.let { manager ->
-            Log.e(TAG, "[networkInfo]: ${networkInfo} ${networkInfo.isConnected}")
-            if (networkInfo.isConnected) {
+
+            if (isNetworkAvailable(appContext)) {
                 manager.requestConnectionInfo(channel) { info ->
                     // InetAddress from WifiP2pInfo struct.
                     val groupOwnerAddress: String = info.groupOwnerAddress.hostAddress
@@ -76,15 +81,10 @@ class WiFiDirectBroadcastReceiver(
                     }
 
                 }
-
             }
-
         }
 
-        connectionChangedSink?.success(
-            ProtoHelper.create(p2pInfo, networkInfo)
-                .toByteArray()
-        )
+        connectionChangedSink?.success(ProtoHelper.create(p2pInfo, networkInfo).toByteArray())
     }
 
     private fun onStateChanged(intent: Intent) {
@@ -127,4 +127,25 @@ class WiFiDirectBroadcastReceiver(
         Log.e(TAG, "[onDiscoveryChanged] $discoveryState | $stateChange")
         discoveryChangedSink?.success(stateChange.toByteArray())
     }
+
+    private fun isNetworkAvailable(context: Context?): Boolean {
+        val connectivityManager =
+            context?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val nw = connectivityManager.activeNetwork ?: return false
+            val actNw = connectivityManager.getNetworkCapabilities(nw) ?: return false
+            return when {
+                actNw.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> true
+                actNw.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
+                //for other device how are able to connect with Ethernet
+                actNw.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> true
+                //for check internet over Bluetooth
+                actNw.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH) -> true
+                else -> false
+            }
+        } else {
+            return connectivityManager.activeNetworkInfo?.isConnected ?: false
+        }
+    }
+
 }

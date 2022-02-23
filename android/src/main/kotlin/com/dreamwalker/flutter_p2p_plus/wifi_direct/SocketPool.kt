@@ -10,6 +10,8 @@
 
 package com.dreamwalker.flutter_p2p_plus.wifi_direct
 
+import android.content.ContentValues.TAG
+import android.util.Log
 import com.dreamwalker.flutter_p2p_plus.StreamHandler
 import com.dreamwalker.flutter_p2p_plus.wifi_direct.transfer.Client
 import com.dreamwalker.flutter_p2p_plus.wifi_direct.transfer.Host
@@ -56,6 +58,7 @@ class SocketPool(private val inputStreamHandler: StreamHandler) {
     }
 
     fun sendDataToHost(port: Int, data: ByteArray) {
+        Log.e(TAG, "[Call] sendDataToHost() | $port")
         val client: Client = getClientByPort(port)
             ?: throw Exception("A socket with this port is not connected.")
 
@@ -74,9 +77,10 @@ class SocketPool(private val inputStreamHandler: StreamHandler) {
     }
 
     fun disconnectFromHost(port: Int) {
+        Log.e(TAG, "[Call] disconnectFromHost() | $port")
         val client: Client = getClientByPort(port)
             ?: throw Exception("A socket with this port is not connected.")
-
+        Log.e(TAG, "[Info] filtered client | ${client.port}")
         client.socket.takeIf { it.isConnected }?.apply {
             close()
         }
@@ -92,11 +96,13 @@ class SocketPool(private val inputStreamHandler: StreamHandler) {
     }
 
     private fun getHostByPort(port: Int): Host? {
+        Log.e(TAG, "[Call] getHostByPort() | $port")
         return hosts.firstOrNull { s -> s.serverSocket.localPort == port }
     }
 
 
     private fun getClientByPort(port: Int): Client? {
+        Log.e(TAG, "[Call] getClientByPort() | $port")
         return clientPool.firstOrNull { s -> s.port == port }
     }
 }
