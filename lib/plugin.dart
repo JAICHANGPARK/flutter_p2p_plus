@@ -2,6 +2,7 @@
  * This file is part of the flutter_p2p package.
  *
  * Copyright 2019 by Julian Finkler <julian@mintware.de>
+ * Copyright 2022 by JAICHANGPARK <Maintaince>
  *
  * For the full copyright and license information, please read the LICENSE
  * file that was distributed with this source code.
@@ -16,9 +17,8 @@ class FlutterP2pPlus {
   static const _channel = MethodChannel('$channelBase/flutter_p2p');
 
   static WiFiDirectBroadcastReceiver wifiEvents = WiFiDirectBroadcastReceiver();
-  static SocketMaster _socketMaster = SocketMaster();
+  static final SocketMaster _socketMaster = SocketMaster();
 
-  //region Permissions
 
   static Future<bool?> isLocationPermissionGranted() async {
     return await _channel.invokeMethod("isLocationPermissionGranted", {});
@@ -28,9 +28,6 @@ class FlutterP2pPlus {
     return await _channel.invokeMethod("requestLocationPermission", {});
   }
 
-  //endregion
-
-  //region WiFi Event Subscription
 
   static Future<bool?> register() async {
     return await _channel.invokeMethod("register", {});
@@ -40,9 +37,6 @@ class FlutterP2pPlus {
     return await _channel.invokeMethod("unregister", {});
   }
 
-  //endregion
-
-  //region Discover
 
   static Future<bool?> discoverDevices() async {
     return await _channel.invokeMethod("discover", {});
@@ -52,9 +46,6 @@ class FlutterP2pPlus {
     return await _channel.invokeMethod("stopDiscover", {});
   }
 
-  //endregion
-
-  //region Connection
 
   static Future<bool?> connect(WifiP2pDevice device) async {
     return await _channel
@@ -69,10 +60,6 @@ class FlutterP2pPlus {
     return await _channel.invokeMethod("removeGroup", {});
   }
 
-  //endregion
-
-  //region Host Advertising
-
   static Future<P2pSocket?> openHostPort(int port) async {
     await _channel.invokeMethod("openHostPort", {"port": port});
     return _socketMaster.registerSocket(port, true);
@@ -86,10 +73,6 @@ class FlutterP2pPlus {
   static Future<bool?> acceptPort(int port) async {
     return await _channel.invokeMethod("acceptPort", {"port": port});
   }
-
-  //endregion
-
-  //region Client Connection
 
   static Future<P2pSocket?> connectToHost(
     String address,
@@ -112,10 +95,6 @@ class FlutterP2pPlus {
     });
   }
 
-  //endregion
-
-  //region Data Transfer
-
   static Future<bool?> sendData(int port, bool isHost, Uint8List data) async {
     var req = SocketMessage.create();
     req.port = port;
@@ -128,6 +107,5 @@ class FlutterP2pPlus {
     });
   }
 
-// endregion
 
 }

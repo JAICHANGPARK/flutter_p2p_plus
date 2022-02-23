@@ -68,7 +68,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       return;
     }
     _subscriptions.add(FlutterP2pPlus.wifiEvents.stateChange!.listen((change) {
-      print("stateChange: ${change.isEnabled}");
+      debugPrint("stateChange: ${change.isEnabled}");
     }));
 
     _subscriptions.add(FlutterP2pPlus.wifiEvents.connectionChange!.listen((change) {
@@ -77,22 +77,22 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         _isHost = change.wifiP2pInfo.isGroupOwner;
         _deviceAddress = change.wifiP2pInfo.groupOwnerAddress;
       });
-      print("connectionChange: ${change.wifiP2pInfo.isGroupOwner}, Connected: ${change.networkInfo.isConnected}");
+      debugPrint("connectionChange: ${change.wifiP2pInfo.isGroupOwner}, Connected: ${change.networkInfo.isConnected}");
     }));
 
     _subscriptions.add(FlutterP2pPlus.wifiEvents.thisDeviceChange!.listen((change) {
-      print(
+      debugPrint(
           "deviceChange: ${change.deviceName} / ${change.deviceAddress} / ${change.primaryDeviceType} / ${change.secondaryDeviceType} ${change.isGroupOwner ? 'GO' : '-GO'}");
     }));
 
     _subscriptions.add(FlutterP2pPlus.wifiEvents.discoveryChange!.listen((change) {
-      print("discoveryStateChange: ${change.isDiscovering}");
+      debugPrint("discoveryStateChange: ${change.isDiscovering}");
     }));
 
     _subscriptions.add(FlutterP2pPlus.wifiEvents.peersChange!.listen((change) {
-      print("peersChange: ${change.devices.length}");
+      debugPrint("peersChange: ${change.devices.length}");
       change.devices.forEach((device) {
-        print("device: ${device.deviceName} / ${device.deviceAddress}");
+        debugPrint("device: ${device.deviceName} / ${device.deviceAddress}");
       });
 
       setState(() {
@@ -128,9 +128,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         }
       });
 
-      print("_openPort done");
+      debugPrint("_openPort done");
       _isOpen = (await FlutterP2pPlus.acceptPort(port))!;
-      print("_accept done: $_isOpen");
+      debugPrint("_accept done: $_isOpen");
     }
   }
 
@@ -150,7 +150,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       snackBar("Received from ${_isHost ? "Host" : "Client"} $msg");
     });
 
-    print("_connectToPort done");
+    debugPrint("_connectToPort done");
   }
 
   Future<bool> _checkPermission() async {
@@ -184,12 +184,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             ListTile(
-              title: Text("등록"),
-              onTap: ()async{
-                await FlutterP2pPlus.register();
-              },
-            ),
-            ListTile(
               title: const Text("Connection State"),
               subtitle: Text(_isConnected ? "Connected: ${_isHost ? "Host" : "Client"}" : "Disconnected"),
             ),
@@ -201,15 +195,32 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                 style: Theme.of(context).textTheme.headline5,
               ),
             ),
-            ListTile(
-              title: const Text("Discover Devices"),
-              onTap: () async {
-                if (!_isConnected) {
-                  await FlutterP2pPlus.discoverDevices();
-                } else {
-                  return;
-                }
-              },
+            IntrinsicHeight(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ListTile(
+                      title: const Text("Discover Devices"),
+                      onTap: () async {
+                        if (!_isConnected) {
+                          await FlutterP2pPlus.discoverDevices();
+                        } else {
+                          return;
+                        }
+                      },
+                    ),
+                  ),
+                  VerticalDivider(color: Colors.grey,),
+                  Expanded(
+                    child: ListTile(
+                      title: const Text("Stop Discover Devices"),
+                      onTap: () async {
+                        FlutterP2pPlus.stopDiscoverDevices();
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
             const Divider(),
             ListTile(
@@ -243,13 +254,17 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             ),
             Expanded(
               child: ListView(
-                children: this.devices.map((d) {
+                children: devices.map((d) {
                   return ListTile(
                     title: Text(d.deviceName),
                     subtitle: Text(d.deviceAddress),
                     onTap: () async{
-                      print("${_isConnected ? "Disconnect" : "Connect"} to device: $_deviceAddress");
-                      // return _isConnected ? await FlutterP2pPlus.cancelConnect(d) : await FlutterP2pPlus.connect(d);
+                      debugPrint("${_isConnected ? "Disconnect" : "Connect"} to device: $_deviceAddress");
+                      if(_isConnected){
+                        FlutterP2pPlus.cancelConnect(d);
+                      }else{
+                        FlutterP2pPlus.connect(d);
+                      }
                     },
                   );
                 }).toList(),
