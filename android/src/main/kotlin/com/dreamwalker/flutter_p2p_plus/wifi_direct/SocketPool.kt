@@ -21,8 +21,8 @@ class SocketPool(private val inputStreamHandler: StreamHandler) {
     private val hosts = mutableListOf<Host>()
 
     fun openSocket(port: Int): Host {
-        val h = getHostByPort(port);
-        if (h != null && !h.serverSocket.isClosed) {
+        val h = getHostByPort(port)
+        if ((h != null) && !(h.serverSocket.isClosed)) {
             throw Exception("A socket with this port already exist")
         }
 
@@ -36,15 +36,15 @@ class SocketPool(private val inputStreamHandler: StreamHandler) {
 
     fun acceptClientConnection(port: Int) {
         val host: Host = getHostByPort(port)
-                ?: throw Exception("A socket with this port is not registered.")
+            ?: throw Exception("A socket with this port is not registered.")
         host.execute()
     }
 
     fun closeSocket(port: Int) {
         val socket: Host = getHostByPort(port)
-                ?: throw Exception("A socket with this port is not registered.")
+            ?: throw Exception("A socket with this port is not registered.")
         socket.serverSocket.close()
-        hosts.remove(socket);
+        hosts.remove(socket)
     }
 
     fun connectToHost(address: String, port: Int, timeout: Int): Client {
@@ -57,7 +57,7 @@ class SocketPool(private val inputStreamHandler: StreamHandler) {
 
     fun sendDataToHost(port: Int, data: ByteArray) {
         val client: Client = getClientByPort(port)
-                ?: throw Exception("A socket with this port is not connected.")
+            ?: throw Exception("A socket with this port is not connected.")
 
         try {
             client.writeToOutput(data)
@@ -68,14 +68,14 @@ class SocketPool(private val inputStreamHandler: StreamHandler) {
 
     fun sendDataToClient(port: Int, data: ByteArray) {
         val host: Host = getHostByPort(port)
-                ?: throw Exception("A socket with this port is not connected.")
+            ?: throw Exception("A socket with this port is not connected.")
 
         host.writeToOutput(data)
     }
 
     fun disconnectFromHost(port: Int) {
         val client: Client = getClientByPort(port)
-                ?: throw Exception("A socket with this port is not connected.")
+            ?: throw Exception("A socket with this port is not connected.")
 
         client.socket.takeIf { it.isConnected }?.apply {
             close()
@@ -84,7 +84,7 @@ class SocketPool(private val inputStreamHandler: StreamHandler) {
 
     fun disconnectFromClient(port: Int) {
         val host: Host = getHostByPort(port)
-                ?: throw Exception("A socket with this port is not connected.")
+            ?: throw Exception("A socket with this port is not connected.")
 
         host.serverSocket.takeIf { !it.isClosed }?.apply {
             close()

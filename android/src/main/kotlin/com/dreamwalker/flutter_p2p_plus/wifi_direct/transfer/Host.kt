@@ -2,6 +2,7 @@
  * This file is part of the flutter_p2p package.
  *
  * Copyright 2019 by Julian Finkler <julian@mintware.de>
+ * Copyright 2022 by JAICHANG PARK <Maintaince>
  *
  * For the full copyright and license information, please read the LICENSE
  * file that was distributed with this source code.
