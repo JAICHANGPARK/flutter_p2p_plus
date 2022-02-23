@@ -10,6 +10,7 @@
 
 package com.dreamwalker.flutter_p2p_plus.wifi_direct.transfer
 
+import com.dreamwalker.flutter_p2p_plus.Config
 import com.dreamwalker.flutter_p2p_plus.FlutterP2pPlusPlugin
 import com.dreamwalker.flutter_p2p_plus.utility.ProtoHelper
 import java.io.InputStream
@@ -21,7 +22,7 @@ class SocketHandler(private val socket: Socket,
     private val inputStream: InputStream = socket.getInputStream()
 
     fun handleInput(cb: (data: ByteArray) -> Unit) {
-        val buf = ByteArray(1024)
+        val buf = ByteArray(Config().bufferSize)
 
         var readCount = 0
 

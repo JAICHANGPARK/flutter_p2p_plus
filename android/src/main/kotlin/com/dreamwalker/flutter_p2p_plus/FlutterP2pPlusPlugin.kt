@@ -20,22 +20,23 @@ import android.net.wifi.p2p.WifiP2pManager
 import android.os.Build
 import android.os.Looper
 import android.util.Log
-import androidx.annotation.Keep
 import androidx.annotation.NonNull
-import androidx.annotation.RequiresApi
+import androidx.core.app.ActivityCompat
 import com.dreamwalker.flutter_p2p_plus.utility.EventChannelPool
 import com.dreamwalker.flutter_p2p_plus.wifi_direct.ResultActionListener
 import com.dreamwalker.flutter_p2p_plus.wifi_direct.SocketPool
 import com.dreamwalker.flutter_p2p_plus.wifi_direct.WiFiDirectBroadcastReceiver
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 
-class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin {
+
+class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
 
     private val intentFilter = IntentFilter()
     private var receiver: WiFiDirectBroadcastReceiver? = null
@@ -48,7 +49,7 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin {
     private lateinit var mChannel: MethodChannel
     var context: Context? = null
     private var pluginBinding: FlutterPluginBinding? = null
-    private val activityBinding: ActivityPluginBinding? = null
+    private var activityBinding: ActivityPluginBinding? = null
 
     companion object {
         private const val REQUEST_ENABLE_LOCATION = 600
@@ -92,6 +93,25 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin {
         }
     }
 
+
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        activityBinding = binding
+//        activityBinding?.addRequestPermissionsResultListener(this);
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {
+        activityBinding = null
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        onAttachedToActivity(binding)
+    }
+
+    override fun onDetachedFromActivity() {
+        Log.d(TAG, "onDetachedFromActivity")
+//        activityBinding?.removeRequestPermissionsResultListener(this)
+        activityBinding = null
+    }
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPluginBinding) {
         Log.e(TAG, "[Call] onAttachedToEngine()")
@@ -252,41 +272,27 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin {
                 )
                 result.success(true)
             }
+            "requestLocationPermission" -> {
+                val perm = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+                activityBinding?.let {
+                    ActivityCompat.requestPermissions(
+                        it.activity, perm, REQUEST_ENABLE_LOCATION
+                    )
+                }
+                result?.success(true)
+            }
+            "isLocationPermissionGranted" -> {
+                val permission = Manifest.permission.ACCESS_FINE_LOCATION
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    result.success(
+                        PackageManager.PERMISSION_GRANTED == context
+                            ?.checkSelfPermission(permission)
+                    )
+                }
+            }
 
         }
 
     }
 
-
-    //endregion
-
-    //region Client Connection
-
-
-    //endregion
-
-    //region Data Transfer
-
-
-    @RequiresApi(Build.VERSION_CODES.M)
-    @Keep
-    @Suppress("unused", "UNUSED_PARAMETER")
-    private fun requestLocationPermission(call: MethodCall, result: Result?) {
-        val perm = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
-
-//        context?.requestPermissions(perm, REQUEST_ENABLE_LOCATION)
-        result?.success(true)
-    }
-
-    @Keep
-    @Suppress("unused", "UNUSED_PARAMETER")
-    private fun isLocationPermissionGranted(call: MethodCall, result: Result) {
-        val permission = Manifest.permission.ACCESS_FINE_LOCATION
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            result.success(
-                PackageManager.PERMISSION_GRANTED == context
-                    ?.checkSelfPermission(permission)
-            )
-        }
-    }
 }
