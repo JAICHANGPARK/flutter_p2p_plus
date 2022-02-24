@@ -11,15 +11,25 @@
 package com.dreamwalker.flutter_p2p_plus.wifi_direct
 
 import android.content.ContentValues.TAG
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import com.dreamwalker.flutter_p2p_plus.StreamHandler
 import com.dreamwalker.flutter_p2p_plus.wifi_direct.transfer.Client
 import com.dreamwalker.flutter_p2p_plus.wifi_direct.transfer.Host
 import java.net.ServerSocket
+import java.util.function.Predicate
+
+@RequiresApi(Build.VERSION_CODES.N)
+fun <T> remove(list: MutableList<T>, predicate: Predicate<T>) {
+    val newList: MutableList<T> = ArrayList()
+    list.filter { predicate.test(it) }.forEach { newList.add(it) }
+    list.removeAll(newList)
+}
 
 class SocketPool(private val inputStreamHandler: StreamHandler) {
 
-    private val clientPool = mutableListOf<Client>()
+    private val clientPool = mutableSetOf<Client>()
     private val hosts = mutableListOf<Host>()
 
     fun openSocket(port: Int): Host {
@@ -29,7 +39,6 @@ class SocketPool(private val inputStreamHandler: StreamHandler) {
         }
 
         val socket = ServerSocket(port)
-
         val host = Host(socket, inputStreamHandler)
         hosts.add(host)
 
@@ -50,10 +59,14 @@ class SocketPool(private val inputStreamHandler: StreamHandler) {
     }
 
     fun connectToHost(address: String, port: Int, timeout: Int): Client {
+        Log.e(TAG, "[Call] connectToHost() | $address | $port")
         val client = Client(address, port, inputStreamHandler, timeout)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            clientPool.removeIf { n -> (n.port == port && n.address == address) }
+        }
+        Log.e(TAG, "[Info] clientPool Length | ${clientPool.size}")
         clientPool.add(client)
         client.execute()
-
         return client
     }
 
@@ -81,6 +94,7 @@ class SocketPool(private val inputStreamHandler: StreamHandler) {
         val client: Client = getClientByPort(port)
             ?: throw Exception("A socket with this port is not connected.")
         Log.e(TAG, "[Info] filtered client | ${client.port}")
+
         client.socket.takeIf { it.isConnected }?.apply {
             close()
         }

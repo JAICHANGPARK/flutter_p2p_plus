@@ -66,7 +66,7 @@ class WiFiDirectBroadcastReceiver(
             if (isNetworkAvailable(appContext)) {
                 manager.requestConnectionInfo(channel) { info ->
                     // InetAddress from WifiP2pInfo struct.
-                    val groupOwnerAddress: String = info.groupOwnerAddress.hostAddress
+//                    val groupOwnerAddress: String = info.groupOwnerAddress.hostAddress
 
                     // After the group negotiation, we can determine the group owner
                     // (server).
@@ -88,6 +88,7 @@ class WiFiDirectBroadcastReceiver(
     }
 
     private fun onStateChanged(intent: Intent) {
+        Log.e(TAG, "[onStateChanged] Called")
         val state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1)
 
         val isConnected = state == WifiP2pManager.WIFI_P2P_STATE_ENABLED
@@ -114,7 +115,7 @@ class WiFiDirectBroadcastReceiver(
         val device =
             intent.getParcelableExtra<WifiP2pDevice>(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE) as WifiP2pDevice
         val dev: Protos.WifiP2pDevice = ProtoHelper.create(device)
-        Log.e(TAG, "[onThisDeviceChanged] ${device} | ${dev}")
+        Log.e(TAG, "[onThisDeviceChanged] ${device} | ${device.isGroupOwner} | ${dev}")
         thisDeviceChangedSink?.success(dev.toByteArray())
     }
 

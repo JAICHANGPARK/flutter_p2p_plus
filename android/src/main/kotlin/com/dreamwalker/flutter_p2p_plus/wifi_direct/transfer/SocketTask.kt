@@ -26,7 +26,11 @@ abstract class SocketTask(private val inputStreamHandler: StreamHandler) :
     lateinit var socket: Socket
 
     override fun onProgressUpdate(vararg values: ByteArray?) {
-        Log.e(TAG, "[SocketTask] onProgressUpdate() $values | ${values[0]}")
+        Log.e(TAG, "[SocketTask] onProgressUpdate() ${values.size} | ${values[0]} ")
+        values.forEach {
+          print(it.toString())
+        }
+        Log.e(TAG, "[SocketTask] values[0] ${values[0]} | ${values[0].toString()}")
         inputStreamHandler.sink?.success(values[0])
     }
 

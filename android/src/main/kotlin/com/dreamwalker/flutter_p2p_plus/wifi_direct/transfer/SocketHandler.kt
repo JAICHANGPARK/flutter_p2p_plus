@@ -16,8 +16,9 @@ import com.dreamwalker.flutter_p2p_plus.utility.ProtoHelper
 import java.io.InputStream
 import java.net.Socket
 
-class SocketHandler(private val socket: Socket,
-                    private val isHost: Boolean
+class SocketHandler(
+    private val socket: Socket,
+    private val isHost: Boolean
 ) {
     private val inputStream: InputStream = socket.getInputStream()
 
@@ -31,7 +32,8 @@ class SocketHandler(private val socket: Socket,
                 readCount = inputStream.read(buf)
                 readCount
             } != -1) {
-            val result = ProtoHelper.create(port, buf.take(readCount).toByteArray(), inputStream.available())
+            val result =
+                ProtoHelper.create(port, buf.take(readCount).toByteArray(), inputStream.available())
             cb(result.toByteArray())
         }
     }

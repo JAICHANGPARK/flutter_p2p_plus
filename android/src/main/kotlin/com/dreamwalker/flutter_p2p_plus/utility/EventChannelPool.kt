@@ -41,4 +41,10 @@ class EventChannelPool(
     private fun isRegistered(name: String): Boolean {
         return eventChannels.containsKey(name)
     }
+
+    fun unRegistration(){
+        eventChannels.entries.forEach {
+            it.value.onCancel("")
+        }
+    }
 }

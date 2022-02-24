@@ -140,7 +140,17 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
 
 
     override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+        context?.unregisterReceiver(receiver)
+        eventPool?.unRegistration()
         mChannel.setMethodCallHandler(null)
+//        manager.cancelConnect(channel, object : WifiP2pManager.ActionListener {
+//            override fun onSuccess() {
+//            }
+//
+//            override fun onFailure(p0: Int) {
+//            }
+//        })
+
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {
@@ -187,12 +197,9 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 Log.e(TAG, "[Call] onMethodCall connect()")
                 val device = Protos.WifiP2pDevice.parseFrom(call.argument<ByteArray>("payload"))
                 Log.e(TAG, "[Device] $device | ${device.deviceName} | ${device.deviceAddress} | ")
-//                val config = WifiP2pConfig().apply {
-//                    deviceAddress = device.deviceAddress
-//                }
+
                 val config = WifiP2pConfig()
                 config.deviceAddress = device.deviceAddress
-
 
                 try {
                     manager.connect(channel, config, ResultActionListener(result))

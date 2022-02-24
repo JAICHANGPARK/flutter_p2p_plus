@@ -12,13 +12,16 @@ package com.dreamwalker.flutter_p2p_plus.wifi_direct.transfer
 
 import android.util.Log
 import com.dreamwalker.flutter_p2p_plus.StreamHandler
+import java.net.ConnectException
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.net.SocketException
 
-class Client(private val address: String,
-             val port: Int,
-             inputStreamHandler: StreamHandler,
-             private val timeout: Int
+class Client(
+    val address: String,
+    val port: Int,
+    inputStreamHandler: StreamHandler,
+    private val timeout: Int
 ) : SocketTask(inputStreamHandler) {
 
     private lateinit var socketHandler: SocketHandler
@@ -35,9 +38,14 @@ class Client(private val address: String,
             socket.connect(socketAddress, timeout)
             socketHandler = SocketHandler(socket, false)
             socketHandler.handleInput { data -> publishProgress(data) }
-        } catch (e: Exception) {
+        }
+        catch (e: SocketException){
+            Log.e(TAG, "[Error] Client: doInBackground() SocketException ${e.stackTraceToString()}")
+            return false
+        }
+        catch (e: Exception) {
             e.printStackTrace()
-            Log.e(TAG, "[Error] Client: doInBackground()  ${e.printStackTrace()}")
+            Log.e(TAG, "[Error] Client: doInBackground() Exception:  ${e.printStackTrace()}")
             return false
         }
         return true
