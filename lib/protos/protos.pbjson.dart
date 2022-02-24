@@ -150,3 +150,13 @@ const DiscoveryStateChange$json = const {
 
 /// Descriptor for `DiscoveryStateChange`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List discoveryStateChangeDescriptor = $convert.base64Decode('ChREaXNjb3ZlcnlTdGF0ZUNoYW5nZRIkCg1pc0Rpc2NvdmVyaW5nGAEgASgIUg1pc0Rpc2NvdmVyaW5n');
+@$core.Deprecated('Use socketStateDescriptor instead')
+const SocketState$json = const {
+  '1': 'SocketState',
+  '2': const [
+    const {'1': 'isDisconnect', '3': 1, '4': 1, '5': 8, '10': 'isDisconnect'},
+  ],
+};
+
+/// Descriptor for `SocketState`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List socketStateDescriptor = $convert.base64Decode('CgtTb2NrZXRTdGF0ZRIiCgxpc0Rpc2Nvbm5lY3QYASABKAhSDGlzRGlzY29ubmVjdA==');

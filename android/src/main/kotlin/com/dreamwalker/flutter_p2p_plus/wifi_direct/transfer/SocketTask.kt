@@ -15,20 +15,33 @@ import android.os.AsyncTask
 import android.util.Log
 import com.dreamwalker.flutter_p2p_plus.StreamHandler
 import com.dreamwalker.flutter_p2p_plus.utility.CoroutinesAsyncTask
+import com.dreamwalker.flutter_p2p_plus.utility.ProtoHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
 import java.net.Socket
 
-abstract class SocketTask(private val inputStreamHandler: StreamHandler) :
+abstract class SocketTask(
+    private val inputStreamHandler: StreamHandler,
+    private val stateStreamHandler: StreamHandler,
+) :
     CoroutinesAsyncTask<Void, ByteArray, Boolean>("socket_task") {
 
     lateinit var socket: Socket
 
+    override fun onPostExecute(result: Boolean?) {
+        Log.e(TAG, "[SocketTask] onPostExecute()")
+        stateStreamHandler.sink?.success(ProtoHelper.from(result ?: false).toByteArray())
+    }
+
+    override fun onCancelled(result: Boolean?) {
+        Log.e(TAG, "[SocketTask] onCancelled()")
+    }
+
     override fun onProgressUpdate(vararg values: ByteArray?) {
         Log.e(TAG, "[SocketTask] onProgressUpdate() ${values.size} | ${values[0]} ")
         values.forEach {
-          print(it.toString())
+            print(it.toString())
         }
         Log.e(TAG, "[SocketTask] values[0] ${values[0]} | ${values[0].toString()}")
         inputStreamHandler.sink?.success(values[0])
@@ -41,7 +54,6 @@ abstract class SocketTask(private val inputStreamHandler: StreamHandler) :
         } catch (e: Exception) {
             e.printStackTrace()
         }
-
         return true
     }
 }

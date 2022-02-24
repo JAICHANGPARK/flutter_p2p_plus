@@ -20,14 +20,10 @@ import com.dreamwalker.flutter_p2p_plus.wifi_direct.transfer.Host
 import java.net.ServerSocket
 import java.util.function.Predicate
 
-@RequiresApi(Build.VERSION_CODES.N)
-fun <T> remove(list: MutableList<T>, predicate: Predicate<T>) {
-    val newList: MutableList<T> = ArrayList()
-    list.filter { predicate.test(it) }.forEach { newList.add(it) }
-    list.removeAll(newList)
-}
-
-class SocketPool(private val inputStreamHandler: StreamHandler) {
+class SocketPool(
+    private val inputStreamHandler: StreamHandler,
+    private val socketStateStreamHandler: StreamHandler,
+) {
 
     private val clientPool = mutableSetOf<Client>()
     private val hosts = mutableListOf<Host>()
@@ -39,7 +35,7 @@ class SocketPool(private val inputStreamHandler: StreamHandler) {
         }
 
         val socket = ServerSocket(port)
-        val host = Host(socket, inputStreamHandler)
+        val host = Host(socket, inputStreamHandler, socketStateStreamHandler)
         hosts.add(host)
 
         return host
@@ -60,7 +56,7 @@ class SocketPool(private val inputStreamHandler: StreamHandler) {
 
     fun connectToHost(address: String, port: Int, timeout: Int): Client {
         Log.e(TAG, "[Call] connectToHost() | $address | $port")
-        val client = Client(address, port, inputStreamHandler, timeout)
+        val client = Client(address, port, timeout, inputStreamHandler, socketStateStreamHandler)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             clientPool.removeIf { n -> (n.port == port && n.address == address) }
         }

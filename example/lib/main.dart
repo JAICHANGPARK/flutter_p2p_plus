@@ -71,6 +71,7 @@ class _MyAppState extends State<MyExample> with WidgetsBindingObserver {
   final TextEditingController _textEditingController = TextEditingController();
   final FlutterP2pPlus _flutterP2pPlus = FlutterP2pPlus.instance;
   StreamSubscription? _socketInputStreamSubscription;
+  StreamSubscription? _socketStateStreamSubscription;
 
   @override
   void initState() {
@@ -84,6 +85,7 @@ class _MyAppState extends State<MyExample> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _socketInputStreamSubscription?.cancel();
+    _socketStateStreamSubscription?.cancel();
     _flutterP2pPlus.removeGroup();
     for (var element in _subscriptions) {
       element.cancel();
@@ -195,12 +197,27 @@ class _MyAppState extends State<MyExample> with WidgetsBindingObserver {
     });
     await _socketInputStreamSubscription?.cancel();
     _socketInputStreamSubscription = null;
+    await _socketStateStreamSubscription?.cancel();
+    _socketStateStreamSubscription = null;
+
     _socketInputStreamSubscription ??= _socket?.inputStream.listen((data) {
       var msg = utf8.decode(data.data);
       setState(() {
         _rcvText += "$msg \n";
       });
       // snackBar("Received from ${_isHost ? "Host" : "Client"} $msg");
+    });
+
+    _socketStateStreamSubscription ??= _socket?.stateStream.listen((event) {
+      debugPrint("[Listen] Socket State: $event");
+      setState(() {
+        _socketClientConnected = false;
+      });
+      showDialog(
+          context: context,
+          builder: (context) => const AlertDialog(
+                content: Text("Socket Host Disconnected"),
+              ));
     });
 
     debugPrint("_connectToPort done");

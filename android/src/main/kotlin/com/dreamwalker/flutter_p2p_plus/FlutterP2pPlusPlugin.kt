@@ -60,6 +60,7 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
         private const val CH_DEVICE_CHANGE = "bc/this-device-change"
         private const val CH_DISCOVERY_CHANGE = "bc/discovery-change"
         private const val CH_SOCKET_READ = "socket/read"
+        private const val CH_SOCKET_STATE = "socket/state"
         val config: Config = Config()
 
     }
@@ -68,15 +69,19 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
         setupIntentFilters()
     }
 
-    fun setupEventPool() {
+    private fun setupEventPool() {
         eventPool?.register(CH_STATE_CHANGE)
         eventPool?.register(CH_PEERS_CHANGE)
         eventPool?.register(CH_CON_CHANGE)
         eventPool?.register(CH_DEVICE_CHANGE)
         eventPool?.register(CH_SOCKET_READ)
         eventPool?.register(CH_DISCOVERY_CHANGE)
+        eventPool?.register(CH_SOCKET_STATE)
 
-        socketPool = SocketPool(eventPool?.getHandler(CH_SOCKET_READ)!!)
+        socketPool = SocketPool(
+            eventPool?.getHandler(CH_SOCKET_READ)!!,
+            eventPool?.getHandler(CH_SOCKET_STATE)!!
+        )
     }
 
     private fun setupIntentFilters() {
@@ -281,6 +286,7 @@ class FlutterP2pPlusPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 result.success(true)
             }
             "sendDataToHost" -> {
+                Log.e(TAG, "[Call] onMethodCall sendDataToHost()")
                 val socketMessage =
                     Protos.SocketMessage.parseFrom(call.argument<ByteArray>("payload"))
 

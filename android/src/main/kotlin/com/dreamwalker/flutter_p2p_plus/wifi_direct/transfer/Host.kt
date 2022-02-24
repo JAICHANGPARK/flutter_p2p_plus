@@ -15,8 +15,9 @@ import com.dreamwalker.flutter_p2p_plus.StreamHandler
 import java.net.ServerSocket
 
 class Host(val serverSocket: ServerSocket,
-           inputStreamHandler: StreamHandler
-) : SocketTask(inputStreamHandler) {
+           inputStreamHandler: StreamHandler,
+           stateStreamHandler: StreamHandler,
+) : SocketTask(inputStreamHandler, stateStreamHandler) {
 
     private lateinit var handler: SocketHandler
 

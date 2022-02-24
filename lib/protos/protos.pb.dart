@@ -680,3 +680,50 @@ class DiscoveryStateChange extends $pb.GeneratedMessage {
   void clearIsDiscovering() => clearField(1);
 }
 
+class SocketState extends $pb.GeneratedMessage {
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(const $core.bool.fromEnvironment('protobuf.omit_message_names') ? '' : 'SocketState', createEmptyInstance: create)
+    ..aOB(1, const $core.bool.fromEnvironment('protobuf.omit_field_names') ? '' : 'isDisconnect', protoName: 'isDisconnect')
+    ..hasRequiredFields = false
+  ;
+
+  SocketState._() : super();
+  factory SocketState({
+    $core.bool? isDisconnect,
+  }) {
+    final _result = create();
+    if (isDisconnect != null) {
+      _result.isDisconnect = isDisconnect;
+    }
+    return _result;
+  }
+  factory SocketState.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory SocketState.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  SocketState clone() => SocketState()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  SocketState copyWith(void Function(SocketState) updates) => super.copyWith((message) => updates(message as SocketState)) as SocketState; // ignore: deprecated_member_use
+  $pb.BuilderInfo get info_ => _i;
+  @$core.pragma('dart2js:noInline')
+  static SocketState create() => SocketState._();
+  SocketState createEmptyInstance() => create();
+  static $pb.PbList<SocketState> createRepeated() => $pb.PbList<SocketState>();
+  @$core.pragma('dart2js:noInline')
+  static SocketState getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<SocketState>(create);
+  static SocketState? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get isDisconnect => $_getBF(0);
+  @$pb.TagNumber(1)
+  set isDisconnect($core.bool v) { $_setBool(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasIsDisconnect() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearIsDisconnect() => clearField(1);
+}
+

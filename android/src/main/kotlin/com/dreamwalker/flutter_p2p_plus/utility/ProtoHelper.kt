@@ -21,68 +21,75 @@ class ProtoHelper {
     companion object {
         fun create(isEnabled: Boolean): Protos.StateChange {
             return Protos.StateChange.newBuilder()
-                    .setIsEnabled(isEnabled)
-                    .build()
+                .setIsEnabled(isEnabled)
+                .build()
         }
 
-        fun create(discoveryState: Int) : Protos.DiscoveryStateChange {
+        fun create(discoveryState: Int): Protos.DiscoveryStateChange {
             return Protos.DiscoveryStateChange.newBuilder()
-                    .setIsDiscovering(discoveryState != WifiP2pManager.WIFI_P2P_DISCOVERY_STOPPED)
-                    .build();
+                .setIsDiscovering(discoveryState != WifiP2pManager.WIFI_P2P_DISCOVERY_STOPPED)
+                .build()
         }
 
         fun create(device: WifiP2pDevice): Protos.WifiP2pDevice {
             return Protos.WifiP2pDevice.newBuilder()
-                    .setWpsPbcSupported(device.wpsPbcSupported())
-                    .setWpsKeypadSupported(device.wpsPbcSupported())
-                    .setWpsDisplaySupported(device.wpsDisplaySupported())
-                    .setIsServiceDiscoveryCapable(device.isServiceDiscoveryCapable)
-                    .setIsGroupOwner(device.isGroupOwner)
-                    .setDeviceName(device.deviceName ?: "")
-                    .setDeviceAddress(device.deviceAddress ?: "")
-                    .setPrimaryDeviceType(device.primaryDeviceType ?: "")
-                    .setSecondaryDeviceType(device.secondaryDeviceType ?: "")
-                    .setStatusValue(device.status)
-                    .build()
+                .setWpsPbcSupported(device.wpsPbcSupported())
+                .setWpsKeypadSupported(device.wpsPbcSupported())
+                .setWpsDisplaySupported(device.wpsDisplaySupported())
+                .setIsServiceDiscoveryCapable(device.isServiceDiscoveryCapable)
+                .setIsGroupOwner(device.isGroupOwner)
+                .setDeviceName(device.deviceName ?: "")
+                .setDeviceAddress(device.deviceAddress ?: "")
+                .setPrimaryDeviceType(device.primaryDeviceType ?: "")
+                .setSecondaryDeviceType(device.secondaryDeviceType ?: "")
+                .setStatusValue(device.status)
+                .build()
         }
 
         fun create(devices: List<WifiP2pDevice>): Protos.WifiP2pDeviceList {
             return Protos.WifiP2pDeviceList.newBuilder()
-                    .addAllDevices(devices.map(Companion::create))
-                    .build()
+                .addAllDevices(devices.map(Companion::create))
+                .build()
         }
 
         fun create(p2pInfo: WifiP2pInfo, networkInfo: NetworkInfo): Protos.ConnectionChange {
             return Protos.ConnectionChange.newBuilder()
-                    .setWifiP2PInfo(create(p2pInfo))
-                    .setNetworkInfo(create(networkInfo))
-                    .build()
+                .setWifiP2PInfo(create(p2pInfo))
+                .setNetworkInfo(create(networkInfo))
+                .build()
         }
 
         fun create(p2pInfo: WifiP2pInfo): Protos.WifiP2pInfo {
             return Protos.WifiP2pInfo.newBuilder()
-                    .setGroupFormed(p2pInfo.groupFormed)
-                    .setIsGroupOwner(p2pInfo.isGroupOwner)
-                    .setGroupOwnerAddress(p2pInfo.groupOwnerAddress?.hostAddress ?: "")
-                    .build()
+                .setGroupFormed(p2pInfo.groupFormed)
+                .setIsGroupOwner(p2pInfo.isGroupOwner)
+                .setGroupOwnerAddress(p2pInfo.groupOwnerAddress?.hostAddress ?: "")
+                .build()
         }
 
         fun create(networkInfo: NetworkInfo): Protos.NetworkInfo {
             return Protos.NetworkInfo.newBuilder()
-                    .setSubType(networkInfo.subtype)
-                    .setIsConnected(networkInfo.isConnected)
-                    .setDetailedStateValue(networkInfo.detailedState.ordinal)
-                    .setExtraInfo(networkInfo.extraInfo ?: "")
-                    .build()
+                .setSubType(networkInfo.subtype)
+                .setIsConnected(networkInfo.isConnected)
+                .setDetailedStateValue(networkInfo.detailedState.ordinal)
+                .setExtraInfo(networkInfo.extraInfo ?: "")
+                .build()
         }
 
         fun create(port: Int, data: ByteArray, dataAvailable: Int): Protos.SocketMessage {
             return Protos.SocketMessage.newBuilder()
-                    .setData(ByteString.copyFrom(data))
-                    .setPort(port)
-                    .setDataAvailable(dataAvailable)
-                    .build()
+                .setData(ByteString.copyFrom(data))
+                .setPort(port)
+                .setDataAvailable(dataAvailable)
+                .build()
         }
+
+        fun from(state: Boolean): Protos.SocketState {
+            return Protos.SocketState.newBuilder()
+                .setIsDisconnect(state)
+                .build()
+        }
+
 
     }
 }

@@ -12,6 +12,7 @@ package com.dreamwalker.flutter_p2p_plus.wifi_direct.transfer
 
 import android.util.Log
 import com.dreamwalker.flutter_p2p_plus.StreamHandler
+import io.flutter.plugin.common.EventChannel
 import java.net.ConnectException
 import java.net.InetSocketAddress
 import java.net.Socket
@@ -20,9 +21,11 @@ import java.net.SocketException
 class Client(
     val address: String,
     val port: Int,
+    private val timeout: Int,
     inputStreamHandler: StreamHandler,
-    private val timeout: Int
-) : SocketTask(inputStreamHandler) {
+    stateStreamHandler: StreamHandler,
+//    private val stateChangedSink: EventChannel.EventSink?,
+) : SocketTask(inputStreamHandler, stateStreamHandler) {
 
     private lateinit var socketHandler: SocketHandler
 
@@ -38,14 +41,18 @@ class Client(
             socket.connect(socketAddress, timeout)
             socketHandler = SocketHandler(socket, false)
             socketHandler.handleInput { data -> publishProgress(data) }
-        }
-        catch (e: SocketException){
+        } catch (e: IllegalArgumentException) {
+            Log.e(
+                TAG,
+                "[Error] Client: doInBackground() IllegalArgumentException ${e.stackTraceToString()}"
+            )
+            return false
+        } catch (e: SocketException) {
             Log.e(TAG, "[Error] Client: doInBackground() SocketException ${e.stackTraceToString()}")
             return false
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
             e.printStackTrace()
-            Log.e(TAG, "[Error] Client: doInBackground() Exception:  ${e.printStackTrace()}")
+            Log.e(TAG, "[Error] Client: doInBackground() Exception: ${e.stackTraceToString()}")
             return false
         }
         return true
