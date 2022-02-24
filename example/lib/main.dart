@@ -17,29 +17,65 @@ import 'package:flutter_p2p_plus/flutter_p2p_plus.dart';
 import 'package:flutter_p2p_plus/protos/protos.pb.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-void main() => runApp(MyApp());
+class Packet {
+  String? data;
+  int? timestamp;
 
-class MyApp extends StatefulWidget {
+  Packet({this.data, this.timestamp});
+
+  Packet.fromJson(Map<String, dynamic> json) {
+    data = json['data'];
+    timestamp = json['timestamp'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['data'] = this.data;
+    data['timestamp'] = timestamp;
+    return data;
+  }
+}
+
+void main() => runApp(const MyApp());
+
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: MyExample(),
+    );
+  }
+}
+
+class MyExample extends StatefulWidget {
   @override
   _MyAppState createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+class _MyAppState extends State<MyExample> with WidgetsBindingObserver {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   var _deviceAddress = "";
   var _isConnected = false;
   var _isHost = false;
   var _isOpen = false;
+  var _socketClientConnected = false;
+  String _sendText = "";
+  String _rcvText = "";
 
   P2pSocket? _socket;
   WifiP2pDevice? _wifiP2pDevice;
   List<WifiP2pDevice> devices = [];
   final List<StreamSubscription> _subscriptions = [];
-  TextEditingController _textEditingController = TextEditingController();
+  final TextEditingController _textEditingController = TextEditingController();
+  final FlutterP2pPlus _flutterP2pPlus = FlutterP2pPlus.instance;
+  StreamSubscription? _socketInputStreamSubscription;
 
   @override
   void initState() {
     super.initState();
+    print("initState()");
     _register();
     WidgetsBinding.instance.addObserver(this);
   }
@@ -47,9 +83,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    FlutterP2pPlus.removeGroup();
+    _socketInputStreamSubscription?.cancel();
+    _flutterP2pPlus.removeGroup();
     for (var element in _subscriptions) {
       element.cancel();
+    }
+    if (_isConnected) {
+      if (_wifiP2pDevice != null) {
+        FlutterP2pPlus.instance.cancelConnect(_wifiP2pDevice!);
+      }
     }
     super.dispose();
   }
@@ -69,55 +111,55 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (!await _checkPermission()) {
       return;
     }
+
     _subscriptions.add(FlutterP2pPlus.wifiEvents.stateChange!.listen((change) {
-      debugPrint("stateChange: ${change.isEnabled}");
+      debugPrint("[Listen] stateChange: ${change.isEnabled}");
     }));
 
     _subscriptions.add(FlutterP2pPlus.wifiEvents.connectionChange!.listen((change) {
-      debugPrint(
-          "[Listen] connectionChange() ${change.wifiP2pInfo.groupOwnerAddress}");
+      debugPrint("[Listen] connectionChange() ${change.wifiP2pInfo.groupOwnerAddress}");
       setState(() {
         _isConnected = change.networkInfo.isConnected;
         _isHost = change.wifiP2pInfo.isGroupOwner;
         _deviceAddress = change.wifiP2pInfo.groupOwnerAddress;
       });
       debugPrint(
-          "connectionChange: ${change.wifiP2pInfo.isGroupOwner}, Connected: ${change.networkInfo.isConnected} | _deviceAddress: ${_deviceAddress}");
+          "[Listen] connectionChange: ${change.wifiP2pInfo.isGroupOwner}, Connected: ${change.networkInfo.isConnected} | _deviceAddress: ${_deviceAddress}");
     }));
 
     _subscriptions.add(FlutterP2pPlus.wifiEvents.thisDeviceChange!.listen((change) {
       debugPrint(
-          "deviceChange: ${change.deviceName} / ${change.deviceAddress} / ${change.primaryDeviceType} / ${change.secondaryDeviceType} ${change.isGroupOwner ? 'GO' : '-GO'}");
+          "[Listen] deviceChange: ${change.deviceName} / ${change.deviceAddress} / ${change.primaryDeviceType} / ${change.secondaryDeviceType} ${change.isGroupOwner ? 'GO' : '-GO'}");
     }));
 
     _subscriptions.add(FlutterP2pPlus.wifiEvents.discoveryChange!.listen((change) {
-      debugPrint("discoveryStateChange: ${change.isDiscovering}");
+      debugPrint("[Listen] discoveryStateChange: ${change.isDiscovering}");
     }));
 
     _subscriptions.add(FlutterP2pPlus.wifiEvents.peersChange!.listen((change) {
-      debugPrint("peersChange: ${change.devices.length}");
+      debugPrint("[Listen] peersChange: ${change.devices.length}");
       // for (var device in change.devices) {
       //   debugPrint("device: ${device.deviceName} / ${device.deviceAddress}");
       // }
-
       setState(() {
         devices = change.devices;
       });
     }));
 
-    FlutterP2pPlus.register();
+    await _flutterP2pPlus.register();
   }
 
   void _unregister() {
+    _socketInputStreamSubscription?.cancel();
     for (var subscription in _subscriptions) {
       subscription.cancel();
     }
-    FlutterP2pPlus.unregister();
+    _flutterP2pPlus.unregister();
   }
 
   void _openPortAndAccept(int port) async {
     if (!_isOpen) {
-      var socket = await FlutterP2pPlus.openHostPort(port);
+      var socket = await _flutterP2pPlus.openHostPort(port);
       setState(() {
         _socket = socket;
       });
@@ -134,26 +176,31 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       });
 
       debugPrint("_openPort done");
-      _isOpen = await FlutterP2pPlus.acceptPort(port) ?? false;
+      _isOpen = await _flutterP2pPlus.acceptPort(port) ?? false;
       debugPrint("_accept done: $_isOpen");
     }
   }
 
   _connectToPort(int port) async {
-    var socket = await FlutterP2pPlus.connectToHost(
+    var socket = await _flutterP2pPlus.connectToHost(
       _deviceAddress,
       // "192.168.15.240",
       port,
-      timeout: 100000,
+      timeout: 10000,
     );
 
     setState(() {
+      _socketClientConnected = true;
       _socket = socket;
     });
-
-    _socket?.inputStream.listen((data) {
+    await _socketInputStreamSubscription?.cancel();
+    _socketInputStreamSubscription = null;
+    _socketInputStreamSubscription ??= _socket?.inputStream.listen((data) {
       var msg = utf8.decode(data.data);
-      snackBar("Received from ${_isHost ? "Host" : "Client"} $msg");
+      setState(() {
+        _rcvText += "$msg \n";
+      });
+      // snackBar("Received from ${_isHost ? "Host" : "Client"} $msg");
     });
 
     debugPrint("_connectToPort done");
@@ -162,10 +209,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   Future<bool?> _socketDisconnect() async {
     bool result = false;
     if (_isHost) {
-      await FlutterP2pPlus.closeHostPort(8000);
+      await _flutterP2pPlus.closeHostPort(8000);
     } else {
-      await FlutterP2pPlus.disconnectFromHost(8000);
+      await _flutterP2pPlus.disconnectFromHost(8000);
     }
+    _socketInputStreamSubscription?.cancel();
+    _socketInputStreamSubscription = null;
+    setState(() {
+      _socketClientConnected = false;
+    });
     // if (_wifiP2pDevice != null) {
     //   result = await FlutterP2pPlus.cancelConnect(_wifiP2pDevice!) ?? false;
     // }
@@ -174,7 +226,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   Future<bool?> _teardown() async {
-    bool? result = await FlutterP2pPlus.removeGroup();
+    bool? result = await _flutterP2pPlus.removeGroup();
     _unregister();
     _socket = null;
     if ((result ?? false)) _isOpen = false;
@@ -194,213 +246,322 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        key: _scaffoldKey,
-        appBar: AppBar(
-          title: const Text('Flutter P2P Plus - Example App'),
-        ),
-        body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              ListTile(
-                title: const Text("Registration"),
-                subtitle: const Text("P2P Registration"),
-                onTap: () async {
-                  await FlutterP2pPlus.register();
-                },
+    return Scaffold(
+      key: _scaffoldKey,
+      appBar: AppBar(
+        title: const Text('Flutter P2P Plus - Example App'),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            ListTile(
+              title: const Text("Registration"),
+              subtitle: const Text("P2P Registration"),
+              onTap: () async {
+                await _flutterP2pPlus.register();
+              },
+            ),
+            const Divider(
+              color: Colors.black,
+            ),
+            ListTile(
+              title: const Text("Connection State"),
+              trailing: Text(_isConnected ? "Connected: ${_isHost ? "Host" : "Client"}" : "Disconnected"),
+            ),
+            _isConnected
+                ? MaterialButton(
+                    child: const Text("Disconnect P2P"),
+                    onPressed: () async {
+                      if (_wifiP2pDevice != null) {
+                        bool? result = await _flutterP2pPlus.cancelConnect(_wifiP2pDevice!);
+                        print("[cancelConnect] result: $result");
+                        setState(() {
+                          _isConnected = false;
+                        });
+                      }
+                    })
+                : Container(),
+            const Divider(
+              color: Colors.black,
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                "Discover Controller",
+                style: Theme.of(context).textTheme.headline5,
               ),
-              ListTile(
-                title: const Text("Connection State"),
-                subtitle: Text(_isConnected ? "Connected: ${_isHost ? "Host" : "Client"}" : "Disconnected"),
-              ),
-              const Divider(),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  "Controller",
-                  style: Theme.of(context).textTheme.headline5,
+            ),
+            IntrinsicHeight(
+              child: SizedBox(
+                height: 48,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ListTile(
+                        title: const Text("Discover Devices"),
+                        onTap: () async {
+                          if (!_isConnected) {
+                            await _flutterP2pPlus.discoverDevices();
+                          } else {
+                            return;
+                          }
+                        },
+                      ),
+                    ),
+                    const VerticalDivider(
+                      color: Colors.grey,
+                    ),
+                    Expanded(
+                      child: ListTile(
+                        title: const Text("Stop Discover Devices"),
+                        onTap: () async {
+                          await _flutterP2pPlus.stopDiscoverDevices();
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              IntrinsicHeight(
-                child: SizedBox(
-                  height: 48,
-                  child: Row(
+            ),
+            const Divider(
+              color: Colors.black,
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                "Device List",
+                style: Theme.of(context).textTheme.headline5,
+              ),
+            ),
+            SizedBox(
+              height: 240,
+              child: ListView(
+                children: devices.map((d) {
+                  return Column(
                     children: [
-                      Expanded(
-                        child: ListTile(
-                          title: const Text("Discover Devices"),
-                          onTap: () async {
-                            if (!_isConnected) {
-                              await FlutterP2pPlus.discoverDevices();
-                            } else {
-                              return;
-                            }
-                          },
-                        ),
-                      ),
-                      const VerticalDivider(
-                        color: Colors.grey,
-                      ),
-                      Expanded(
-                        child: ListTile(
-                          title: const Text("Stop Discover Devices"),
-                          onTap: () async {
-                            FlutterP2pPlus.stopDiscoverDevices();
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const Divider(
-                color: Colors.black,
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  "Device List",
-                  style: Theme.of(context).textTheme.headline5,
-                ),
-              ),
-              SizedBox(
-                height: 240,
-                child: ListView(
-                  children: devices.map((d) {
-                    return Column(
-                      children: [
-                        ListTile(
-                          title: Text(d.deviceName),
-                          subtitle: Text(d.deviceAddress),
-                          onTap: () async {
-                            debugPrint("${_isConnected ? "Disconnect" : "Connect"} to device: $_deviceAddress");
+                      ListTile(
+                        title: Text(d.deviceName),
+                        subtitle: Text(d.deviceAddress),
+                        onTap: () async {
+                          // debugPrint("${_isConnected ? "Disconnect" : "Connect"} to device: $_deviceAddress");
 
-                            if (_isConnected) {
-                              if(_wifiP2pDevice != null){
-                                await FlutterP2pPlus.cancelConnect(_wifiP2pDevice!);
-                              }
-                            } else {
-                              _wifiP2pDevice = d;
-                              print("[_wifiP2pDevice] deviceAddress: ${_wifiP2pDevice?.deviceAddress}");
-                              var result = (await FlutterP2pPlus.connect(_wifiP2pDevice!) ?? false);
-                              print("[connect] reault: $result");
-                              if (result) {
-                                _isConnected = true;
-                              }
-                              setState(() {});
+                          if (_isConnected) {
+                            // if (_wifiP2pDevice != null) {
+                            //   await FlutterP2pPlus.cancelConnect(_wifiP2pDevice!);
+                            // }
+                            return;
+                          } else {
+                            _wifiP2pDevice = d;
+                            // bool? stopResult = await FlutterP2pPlus.stopDiscoverDevices();
+                            // if(stopResult ?? false){
+                            //   print("[stopDiscoverDevices] stop discovery devices");
+                            // }
+
+                            print("[_wifiP2pDevice] deviceAddress: ${_wifiP2pDevice?.deviceAddress}");
+                            bool? result = await _flutterP2pPlus.connect(_wifiP2pDevice ?? d);
+                            print("[connect] reault: $result");
+                            if (result ?? false) {
+                              _isConnected = true;
                             }
-                          },
-                        ),
-                        Divider(
-                          color: Colors.brown,
-                          endIndent: 16,
-                          indent: 16,
-                        )
-                      ],
-                    );
-                  }).toList(),
-                ),
+                            await Future.delayed(const Duration(seconds: 1));
+                            await _flutterP2pPlus.stopDiscoverDevices();
+                            setState(() {});
+                          }
+                        },
+                      ),
+                      const Divider(
+                        color: Colors.brown,
+                        endIndent: 16,
+                        indent: 16,
+                      )
+                    ],
+                  );
+                }).toList(),
               ),
-              const Divider(
-                color: Colors.black,
+            ),
+            const Divider(
+              color: Colors.black,
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                "Connect & Open Socket",
+                style: Theme.of(context).textTheme.headline5,
               ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  "Connect & Open Socket",
-                  style: Theme.of(context).textTheme.headline5,
-                ),
-              ),
-              const Divider(
-                color: Colors.brown,
-                indent: 24,
-                endIndent: 24,
-              ),
-              ListTile(
-                title: const Text("Open and accept data from port 8000"),
-                subtitle: _isConnected ? const Text("Active") : const Text("Disable"),
-                onTap: _isConnected && _isHost ? () => _openPortAndAccept(8000) : null,
-              ),
-              const Divider(
-                color: Colors.brown,
-                indent: 24,
-                endIndent: 24,
-              ),
-              ListTile(
+            ),
+            const Divider(
+              color: Colors.brown,
+              indent: 24,
+              endIndent: 24,
+            ),
+            ListTile(
+              title: const Text("Open and accept data from port 8000"),
+              subtitle: _isConnected ? const Text("Active") : const Text("Disable"),
+              onTap: _isConnected && _isHost ? () => _openPortAndAccept(8000) : null,
+            ),
+            const Divider(
+              color: Colors.brown,
+              indent: 24,
+              endIndent: 24,
+            ),
+            ListTile(
                 title: const Text("Connect to port 8000"),
                 subtitle: const Text("This is able to only Client"),
-                onTap: _isConnected && !_isHost ? () => _connectToPort(8000) : null,
+                onTap: () async {
+                  if (_socketClientConnected) {
+                    showDialog(
+                        context: _scaffoldKey.currentContext!,
+                        builder: (context) => const AlertDialog(
+                              content: Text("Already Connected with Host"),
+                            ));
+                    return;
+                  }
+                  if (_isConnected && !_isHost) {
+                    _connectToPort(8000);
+                  }
+                }),
+            const Divider(
+              color: Colors.black,
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                "Data Transfer",
+                style: Theme.of(context).textTheme.headline5,
               ),
-              const Divider(
-                color: Colors.black,
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  "Data Transfer",
-                  style: Theme.of(context).textTheme.headline5,
-                ),
-              ),
-              ListTile(
+            ),
+            ListTile(
                 title: const Text("Send hello world"),
-                onTap: _isConnected ? () async => await _socket?.writeString("Hello World") : null,
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: SizedBox(
-                  height: 64,
-                  child: Row(
-                    children: [
-                      Expanded(
-                          child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black),
-                        ),
-                        child: TextField(
-                          controller: _textEditingController,
-                        ),
-                      )),
-                      SizedBox(
-                        width: 16,
+                onTap: () async {
+                  if (_isConnected) {
+                    var pkt = Packet(data: "Hello World", timestamp: DateTime.now().millisecondsSinceEpoch);
+                    bool? result = await _socket?.writeString(jsonEncode(pkt).toString());
+                    setState(() {
+                      _sendText += "Hello World\n";
+                    });
+                  }
+                }),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: SizedBox(
+                height: 64,
+                child: Row(
+                  children: [
+                    Expanded(
+                        child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.black),
                       ),
-                      ElevatedButton(
-                          onPressed: () async {
-                            if (_textEditingController.text.isNotEmpty) {
-                              await _socket?.writeString(_textEditingController.text.trim());
-                            }
-                          },
-                          child: Text("Send"))
-                    ],
-                  ),
+                      child: TextField(
+                        controller: _textEditingController,
+                      ),
+                    )),
+                    const SizedBox(
+                      width: 16,
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        if (_textEditingController.text.isNotEmpty) {
+                          await _socket?.writeString(_textEditingController.text.trim());
+                          setState(() {
+                            _sendText += _textEditingController.text.trim() + "\n";
+                          });
+                        }
+                      },
+                      child: const Text("Send"),
+                    ),
+                    const SizedBox(
+                      width: 16,
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        setState(() {
+                          _sendText = "";
+                          _rcvText = "";
+                        });
+                      },
+                      child: const Text("Clear"),
+                    )
+                  ],
                 ),
               ),
-              const Divider(
-                color: Colors.black,
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  "Disconnect & Teardown",
-                  style: Theme.of(context).textTheme.headline5,
+            ),
+            SizedBox(
+              height: 240,
+              width: MediaQuery.of(context).size.width,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("Sender"),
+                          const Divider(
+                            color: Colors.brown,
+                          ),
+                          Expanded(
+                            child: Scrollbar(
+                              child: SingleChildScrollView(
+                                child: Text(_sendText),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const VerticalDivider(
+                      color: Colors.brown,
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("Receiver"),
+                          const Divider(
+                            color: Colors.brown,
+                          ),
+                          Expanded(
+                            child: Scrollbar(
+                              child: SingleChildScrollView(
+                                child: Text(_rcvText),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              ListTile(
-                title: const Text("Socket Disconnect"),
-                onTap: _isConnected ? () async => await _socketDisconnect() : null,
+            ),
+            const Divider(
+              color: Colors.black,
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                "Disconnect & Teardown",
+                style: Theme.of(context).textTheme.headline5,
               ),
-              const Divider(
-                color: Colors.brown,
-                indent: 24,
-                endIndent: 24,
-              ),
-              ListTile(
-                title: const Text("Teardown"),
-                onTap: _isConnected ? () async => await _teardown() : null,
-              ),
-            ],
-          ),
+            ),
+            ListTile(
+              title: const Text("Socket Disconnect"),
+              onTap: _isConnected ? () async => await _socketDisconnect() : null,
+            ),
+            const Divider(
+              color: Colors.brown,
+              indent: 24,
+              endIndent: 24,
+            ),
+            ListTile(
+              title: const Text("Teardown"),
+              onTap: _isConnected ? () async => await _teardown() : null,
+            ),
+          ],
         ),
       ),
     );
