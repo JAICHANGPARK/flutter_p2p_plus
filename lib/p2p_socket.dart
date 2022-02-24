@@ -21,7 +21,7 @@ class P2pSocket {
   P2pSocket(this.port, this.isHost, this._inputStream);
 
   Future<bool?> write(Uint8List data) async {
-    return FlutterP2pPlus.sendData(port, isHost, data);
+    return FlutterP2pPlus.instance.sendData(port, isHost, data);
   }
 
   Future<bool?> writeString(String text) {

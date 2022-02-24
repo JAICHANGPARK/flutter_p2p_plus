@@ -14,7 +14,7 @@ part of 'flutter_p2p_plus.dart';
 class SocketMaster {
   static const _channelBase = FlutterP2pPlus.channelBase;
 
-  final _socketReadChannel = EventChannel("$_channelBase/socket/read");
+  final _socketReadChannel = const EventChannel("$_channelBase/socket/read");
 
   Map<int, P2pSocket> sockets = {};
 
@@ -23,6 +23,7 @@ class SocketMaster {
   SocketMaster() {
     _readStream = _socketReadChannel.receiveBroadcastStream().map((a) {
       try {
+        debugPrint("[Info][SocketMaster] ${SocketMessage.fromBuffer(a)}");
         return SocketMessage.fromBuffer(a);
       } catch (e) {
         debugPrint(e.toString());
