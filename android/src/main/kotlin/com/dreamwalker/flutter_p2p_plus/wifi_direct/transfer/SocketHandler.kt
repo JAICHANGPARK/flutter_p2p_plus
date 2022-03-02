@@ -10,6 +10,8 @@
 
 package com.dreamwalker.flutter_p2p_plus.wifi_direct.transfer
 
+import android.content.ContentValues.TAG
+import android.util.Log
 import com.dreamwalker.flutter_p2p_plus.Config
 import com.dreamwalker.flutter_p2p_plus.FlutterP2pPlusPlugin
 import com.dreamwalker.flutter_p2p_plus.utility.ProtoHelper
@@ -32,6 +34,7 @@ class SocketHandler(
                 readCount = inputStream.read(buf)
                 readCount
             } != -1) {
+                Log.e(TAG, "[inputStream] Total Buff Length: $readCount");
             val result =
                 ProtoHelper.create(port, buf.take(readCount).toByteArray(), inputStream.available())
             cb(result.toByteArray())

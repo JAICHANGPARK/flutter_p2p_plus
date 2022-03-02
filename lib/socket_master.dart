@@ -24,6 +24,7 @@ class SocketMaster {
   late Stream<SocketState> _stateStream;
 
   SocketMaster() {
+
     _readStream = _socketReadChannel.receiveBroadcastStream().map((a) {
       try {
         debugPrint("[Info][SocketMaster] ${SocketMessage.fromBuffer(a)}");
