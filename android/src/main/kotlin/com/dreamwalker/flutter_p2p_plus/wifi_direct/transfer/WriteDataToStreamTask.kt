@@ -17,6 +17,7 @@ import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.io.OutputStream
+import java.lang.Exception
 
 class WriteDataToStreamTask(
     private val stream: OutputStream,
@@ -28,9 +29,14 @@ class WriteDataToStreamTask(
     override fun doInBackground(vararg params: Void?): Boolean {
         Log.e(TAG, "[WriteDataToStreamTask] doInBackground() | $bytes ")
 
-        mCoroutineScope.run {
-            stream.write(bytes)
-            stream.flush()
+        mCoroutineScope.launch {
+            try {
+                stream.write(bytes)
+                stream.flush()
+            } catch (e: Exception) {
+                Log.e(TAG, "[Error]: ${e.printStackTrace()}")
+            }
+
         }
 
         return true
