@@ -14,6 +14,7 @@ import android.util.Log
 import com.dreamwalker.flutter_p2p_plus.utility.CoroutinesAsyncTask
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.io.OutputStream
 
@@ -22,15 +23,15 @@ class WriteDataToStreamTask(
     private val bytes: ByteArray
 ) : CoroutinesAsyncTask<Void, Void, Boolean>("write_data_to_stream_task") {
 
-    val mCoroutineScope: CoroutineScope = CoroutineScope(IO)
+    private val mCoroutineScope: CoroutineScope = CoroutineScope(IO)
 
     override fun doInBackground(vararg params: Void?): Boolean {
         Log.e(TAG, "[WriteDataToStreamTask] doInBackground() | $bytes ")
-        stream.write(bytes)
-        stream.flush()
-//        mCoroutineScope.launch {
-//
-//        }
+
+        mCoroutineScope.run {
+            stream.write(bytes)
+            stream.flush()
+        }
 
         return true
     }
