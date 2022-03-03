@@ -26,10 +26,11 @@ class WriteDataToStreamTask(
 
     override fun doInBackground(vararg params: Void?): Boolean {
         Log.e(TAG, "[WriteDataToStreamTask] doInBackground() | $bytes ")
-        mCoroutineScope.launch {
-            stream.write(bytes)
-            stream.flush()
-        }
+        stream.write(bytes)
+        stream.flush()
+//        mCoroutineScope.launch {
+//
+//        }
 
         return true
     }
