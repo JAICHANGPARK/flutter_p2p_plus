@@ -34,7 +34,8 @@ class SocketHandler(
                 readCount = inputStream.read(buf)
                 readCount
             } != -1) {
-                Log.e(TAG, "[inputStream] Total Buff Length: $readCount");
+
+//                Log.e(TAG, "[inputStream] Total Buff Length: $readCount");
             val result =
                 ProtoHelper.create(port, buf.take(readCount).toByteArray(), inputStream.available())
             cb(result.toByteArray())
